@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /v2.html
+Disallow: /v3.html
+Disallow: /original.html
+
+Sitemap: https://harmonic-studio-drab.vercel.app/sitemap.xml
