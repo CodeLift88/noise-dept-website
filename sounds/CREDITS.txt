@@ -1,0 +1,18 @@
+Harmonic Studio — créditos dos sons
+
+piano/   Salamander Grand Piano V3 (Yamaha C5), por Alexander Holm.
+         Licença: Creative Commons Attribution 3.0 — https://creativecommons.org/licenses/by/3.0/
+         Origem: github.com/Tonejs/audio (pasta salamander). Notas aparadas em 6 s com fade e recodificadas em MP3.
+
+epiano/  FluidR3_GM (Frank Wen), instrumentos "electric_piano_1", "celesta",
+celesta/ "pad_2_warm" e "electric_bass_finger", pré-renderizados por Benjamin Gleitzman.
+pad/     Licença: Creative Commons Attribution 3.0 — https://creativecommons.org/licenses/by/3.0/us/
+bass/    Origem: github.com/gleitz/midi-js-soundfonts (pasta FluidR3_GM). Arquivos sem alteração.
+
+drums/   Roland TR-808 Sound Sample Set 1.0.0, gravado por Michael Fischer (Technopolis, 1994),
+         distribuído pelo autor como gratuito e sem restrições de licença.
+         Origem: pacote npm @fluid-music/tr-808 (amostras BD2550, SD2550, RS e CH),
+         convertidas para MP3 mono com o silêncio inicial removido.
+
+A reverberação é gerada no navegador pelo próprio Harmonic Studio.
+A codificação MP3 usa LAME (lamejs 1.2.1, LGPL) — https://lame.sourceforge.io/
