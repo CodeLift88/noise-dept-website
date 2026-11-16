@@ -892,6 +892,55 @@ SoundEngine.prototype.update=function(){if(!this._room){this._room=1;try{this.re
 /* Exportações esperam as amostras carregarem. */
 q('#wavBtn').addEventListener('click',e=>{const need=neededSets();if(!soundOn||!decodeCtx||need.every(k=>bank[k]))return;e.stopImmediatePropagation();prog.textContent='Carregando os instrumentos…';preload().then(()=>exportWav());},true);
 
+/* "Me surpreenda": gera uma progressão a partir de uma biblioteca de progressões conhecidas,
+   com tonalidade, estilo e andamento sorteados. Usa as mesmas funções de acorde do estúdio.
+   Notação dos graus: 0 = I … 6 = VII; sufixo t = tríade, s = com sétima, x = cor harmônica (EXTRA). */
+const STYLES={pop:{label:'pop',groove:'pop',timbre:'piano',bpm:[100,120],swing:[0,0],sev:false},
+ soul:{label:'neo-soul',groove:'soul',timbre:'electric',bpm:[80,96],swing:[12,22],sev:true},
+ jazz:{label:'jazz',groove:'soul',timbre:'piano',bpm:[96,132],swing:[26,36],sev:true},
+ bossa:{label:'bossa',groove:'bossa',timbre:'electric',bpm:[118,136],swing:[0,0],sev:true},
+ lofi:{label:'lo-fi',groove:'lofi',timbre:'electric',bpm:[70,86],swing:[18,28],sev:true},
+ ambient:{label:'ambient',groove:'ambient',timbre:'pad',bpm:[60,76],swing:[0,0],sev:true}};
+const LIBRARY=[
+ ['major','0 4 5 3','I – V – vi – IV','a progressão mais usada do pop',['pop','lofi']],
+ ['major','5 3 0 4','vi – IV – I – V','a mesma ideia, começando no menor',['pop','lofi']],
+ ['major','0 5 3 4','I – vi – IV – V','a dos anos 50',['pop','soul']],
+ ['major','0 3 5 4','I – IV – vi – V','pop com volta pela subdominante',['pop']],
+ ['major','3 0 4 5','IV – I – V – vi','começa no movimento, termina no menor',['pop','lofi']],
+ ['major','0 2 3 4','I – iii – IV – V','subida passo a passo',['pop','soul']],
+ ['major','1 4 0','ii – V – I','a cadência mais importante do jazz',['jazz','bossa','soul']],
+ ['major','1 4 0 5','ii – V – I – vi','cadência com volta para recomeçar',['jazz','bossa']],
+ ['major','0 5 1 4','I – vi – ii – V','o turnaround clássico',['soul','bossa','jazz']],
+ ['major','0 5x 1 4','I – VI7 – ii – V','turnaround com dominante secundária',['jazz','bossa']],
+ ['major','3 4 2 5','IV – V – iii – vi','a "royal road" do J-pop e do city pop',['soul','lofi']],
+ ['major','0 3 3x 0','I – IV – iv – I','o iv menor emprestado, agridoce',['ambient','soul','pop']],
+ ['major','0 1x 3 0','I – II7 – IV – I','dominante secundária com cara de Beatles',['pop']],
+ ['major','0 2x 5 3','I – III7 – vi – IV','tensão que puxa para o menor',['soul','bossa']],
+ ['major','0 3 4x 4','I – IV – Vsus4 – V','suspensão que segura a resolução',['pop','soul']],
+ ['major','0 3 0 3','Imaj7 – IVmaj7','vamp de dois acordes, para respirar',['ambient','soul','lofi']],
+ ['major','0 4 5 2 3 0 3 4','Cânone de Pachelbel','oito acordes descendo e subindo',['pop','ambient']],
+ ['major','1 4 0 0x','ii – V – I – i','resolve no maior e escurece no menor',['jazz','ambient']],
+ ['minor','0 5 2 6','i – VI – III – VII','a progressão épica do menor',['lofi','ambient','pop']],
+ ['minor','0 3 4 0','i – iv – v – i','menor natural, sem pressa',['lofi','ambient']],
+ ['minor','0 6 5 4x','i – VII – VI – V7','a cadência andaluza',['lofi','bossa']],
+ ['minor','0 6 5 6','i – VII – VI – VII','balanço modal, sem resolver',['lofi','ambient','pop']],
+ ['minor','1 4x 0','iiø – V7 – i','o ii – V – I em tom menor',['jazz','bossa']],
+ ['minor','0 3 6 2','i – iv – VII – III','círculo de quintas no menor',['lofi','soul','jazz']],
+ ['minor','0 5 3 4x','i – VI – iv – V7','lo-fi com a força da menor harmônica',['lofi','soul']],
+ ['minor','0 3x 0 3x','i – IV – i – IV','a cor dórica, com sexta maior',['soul','lofi','bossa']]];
+const recentSurprises=[];
+const pick=a=>a[Math.floor(Math.random()*a.length)],between=([a,b])=>a+Math.round(Math.random()*(b-a));
+function surprise(){
+ let idx;const pool=LIBRARY.map((_,i)=>i).filter(i=>!recentSurprises.includes(i));idx=pick(pool);
+ recentSurprises.push(idx);if(recentSurprises.length>5)recentSurprises.shift();
+ const [mode,steps,name,why,styles]=LIBRARY[idx],st=STYLES[pick(styles)],key=Math.floor(Math.random()*12);
+ transact(()=>{Object.assign(state,{key,mode,bpm:between(st.bpm),groove:st.groove,timbre:st.timbre,swing:between(st.swing),seed:state.seed+1});
+  state.progression=steps.split(' ').map(tok=>{const d=+tok[0],f=tok.slice(1);return f==='x'?chord(d,false,true):chord(d,f==='s'||(f!=='t'&&st.sev));});
+  selected=state.progression[0];activeBar=0;regenerate();});
+ q('#presetSelect').value='';flipGrid();setTimeout(preload,50);
+ notify(name+' em '+PORTUGUESE[key]+' '+(mode==='major'?'maior':'menor')+' · '+st.label+' — '+why);clearTimeout(toastTimer);toastTimer=setTimeout(()=>q('#toast').classList.remove('visible'),5000);}
+q('#inspireBtn').addEventListener('click',e=>{e.stopImmediatePropagation();surprise();},true);
+
 /* Exportação MP3: renderiza como o WAV e codifica no navegador com LAME (lame.min.js, LGPL). */
 const mp3Btn=q('#mp3Btn'),wavBtnEl=q('#wavBtn'),prog=q('#exportProgress');let mp3Busy=false;
 new MutationObserver(()=>{if(!mp3Busy)mp3Btn.disabled=!state.progression.length;}).observe(wavBtnEl,{attributes:true,attributeFilter:['disabled']});
